@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Name: convert.sh
+# Name: conver2mkv.sh
 # Description: A script to convert OTA Mpeg recoding to x264 mkv files
 #
 # Copyright Brian Dolan-Goecke 2012
@@ -8,12 +8,14 @@
 
 # need to add machine name
 
-#VERSION="0.1.7-bdg-2012"
+# Old version number... 
 VERSION="0.1.7-goeko-20140117111915"
 
 # Global Variables
 EXIT_STATUS=0
 DELETE_SOURCE_FILE=false
+
+WORKING_DIR=${HOME}/convert2mkv
 
 if test "${1}" = "-d"
 then
@@ -22,12 +24,12 @@ then
   shift
 fi
 
-#STATUS_FILE=${HOME}/convert_status.csv
-STATUS_FILE=/network_drive/Temp/Video_Conversion/convert_status.csv
-Q_FILE=/network_drive/Temp/Video_Conversion/q_file.csv
-COMPLETED_FILE=/network_drive/Temp/Video_Conversion/completed_file.csv
+# Some files to keeps stats... not really that useful.
+STATUS_FILE=${WORKING_DIR}/Stats/convert_status.csv
+Q_FILE=${WORKING_DIR}/Stats/q_file.csv
+COMPLETED_FILE=${WORKING_DIR}/Stats/completed_file.csv
 
-COMPLETED_DIR=${HOME}/Completed
+COMPLETED_DIR=${WORKING_DIR}/Completed
 
 if test $# -ge 1
 then
@@ -36,50 +38,51 @@ else
   NOT_DONE=false
 fi
 
+# Okay go do some work.
 while test ${#} -gt 0
 do
 
   EXTENSION=mkv
-  infile=${1}
-  infilesize=`ls -lH "${infile}" | cut -d\  -f5`
-  outfilesize=0
-  exitdatetime=0
-  file=`basename "${1}"`
-  logfile=${file%%.mpg}_${EXTENSION}.log
-  #outfile=${file%%.mpg}.mp4
-  outfile=${file%%.mpg}.${EXTENSION}
+  INFILE=${1}
+  INFILESIZE=`ls -lH "${infile}" | cut -d\  -f5`
+  OUTFILESIZE=0
+  EXITDATETIME=0
+  FILE=`basename "${1}"`
+  LOGFILE=${file%%.mpg}_${EXTENSION}.log
+  #OUTFILE=${file%%.mpg}.mp4
+  OUTFILE=${file%%.mpg}.${EXTENSION}
 
-  echo "InFile: \"${infile}\"" | tee -a "${logfile}"
-  echo "OutFile: \"${outfile}\"" | tee -a "${logfile}"
-  echo "LogFile: \"${logfile}\"" | tee -a "${logfile}"
-  startdatetime=`date +%Y%m%d%H%M`
-  echo "StartTime: ${startdatetime}" | tee -a "${logfile}"
-  echo "\"${file}\",${startdate}" >> ${Q_FILE}
-  echo "\"${file}\",start,0,${startdatetime},\"${infile}\",${infilesize},${exitdatetime},\"${outfile}\",${outfilesize}" >> ${STATUS_FILE}
+  echo "InFile: \"${INFILE}\"" | tee -a "${LOGFILE}"
+  echo "OutFile: \"${OUTFILE}\"" | tee -a "${LOGFILE}"
+  echo "LogFile: \"${LOGFILE}\"" | tee -a "${LOGFILE}"
+  STARTDATETIME=`date +%Y%m%d%H%M`
+  echo "StartTime: ${STARTDATETIME}" | tee -a "${LOGFILE}"
+  echo "\"${file}\",${STARTDATETIME}" >> ${Q_FILE}
+  echo "\"${file}\",start,0,${STARTDATETIME},\"${INFILE}\",${INFILESIZE},${EXITDATETIME},\"${OUTFILE}\",${OUTFILESIZE}" >> ${STATUS_FILE}
 
   # VLC
-  # /usr/bin/vlc -vvv -I dummy "$infile" --sout "#transcode{vcodec=h264,}:standard{dst=\"$outfile\",access=file}" vlc://quit 2>&1 | tee -a ${logfile}
+  # /usr/bin/vlc -vvv -I dummy "$infile" --sout "#transcode{vcodec=h264,}:standard{dst=\"$outfile\",access=file}" vlc://quit 2>&1 | tee -a ${LOGFILE}
   
-  echo "Working..."
-  #ffmpeg -i "${infile}" -vf yadif -acodec copy  "${outfile}" -acodec copy -newaudio 2>&1 | tee -a "${logfile}"
-  ffmpeg -i "${infile}" -vf yadif -acodec copy  "${outfile}" -acodec copy -newaudio > "${logfile}" 2>&1
+  echo "Converting ${INFILE} to ${OUTFILE}..."
+  #ffmpeg -i "${INFILE}" -vf yadif -acodec copy  "${OUTFILE}" -acodec copy -newaudio 2>&1 | tee -a "${LOGFILE}"
+  ffmpeg -i "${INFILE}" -vf yadif -acodec copy  "${OUTFILE}" -acodec copy -newaudio > "${LOGFILE}" 2>&1
   CONVERT_STATUS=$?
-  exitdatetime=`date +%Y%m%d%H%M`
-  outfilesize=`ls -lH "${outfile}" | cut -d\  -f5`
-  echo "Exit Status from convert: ${CONVERT_STATUS}" | tee -a "${logfile}"
-  echo "\"${file}\",exited,${CONVERT_STATUS},${startdatetime},\"${infile}\",\"${infilesize}\",${exitdatetime},\"${outfile}\",${outfilesize}" >> ${STATUS_FILE}
-  echo "\"${file}\",exited,${CONVERT_STATUS},${startdatetime},\"${infile}\",${infilesize},${exitdatetime},\"${outfile}\",${outfilesize}" >> ${COMPLETED_FILE}
-  echo "Completed Time: ${exitdatetime}" | tee -a "${logfile}"
+  EXITDATETIME=`date +%Y%m%d%H%M`
+  OUTFILESIZE=`ls -lH "${OUTFILE}" | cut -d\  -f5`
+  echo "Exit Status from convert: ${CONVERT_STATUS}" | tee -a "${LOGFILE}"
+  echo "\"${FILE}\",exited,${CONVERT_STATUS},${STARTDATETIME},\"${INFILE}\",${INFILESIZE},${EXITDATETIME},\"${OUTFILE}\",${OUTFILESIZE}" >> ${STATUS_FILE}
+  echo "\"${FILE}\",exited,${CONVERT_STATUS},${STARTDATETIME},\"${INFILE}\",${INFILESIZE},${EXITDATETIME},\"${OUTFILE}\",${OUTFILESIZE}" >> ${COMPLETED_FILE}
+  echo "Completed Time: ${EXITDATETIME}" | tee -a "${logfile}"
 
   if test ${CONVERT_STATUS} -eq 0
   then
     echo "Moving completed file"
-    mv "${outfile}" ${COMPLETED_DIR}/
-    mv "${logfile}" ${COMPLETED_DIR}/
+    mv "${OUTFILE}" ${COMPLETED_DIR}/
+    mv "${LOGFILE}" ${COMPLETED_DIR}/
     if `$DELETE_SOURCE_FILE`
     then
-      echo "Deleting source file \"${infile}\"."
-      rm "${infile}"
+      echo "Deleting source file \"${INFILE}\"."
+      rm "${INFILE}"
     fi
   fi
 
