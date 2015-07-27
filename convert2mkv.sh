@@ -2,10 +2,18 @@
 
 # Name: conver2mkv.sh
 # Description: A script to convert OTA Mpeg recoding to x264 mkv files
+#   the grand plan was to build a multi-machine conversion "system"
+#   machines to dip into the queue of videos to be converted
+#   and grab one work through it and then go on....
+#   But this is a start, and converts files.
 #
-# Copyright Brian Dolan-Goecke 2012
+# Note about ffmpeg on ubunutu
+#http://askubuntu.com/questions/432542/is-ffmpeg-missing-from-the-official-repositories-in-14-04
+
+# Copyright Brian Dolan-Goecke 2012,2015
 # Contact Brian Dolan-Goecke @ http://www.goecke-dolan.com/Brian/sendmeail.php
 
+# 
 # need to add machine name
 
 # Old version number... 
@@ -86,6 +94,7 @@ do
     fi
   fi
 
+  #Give someone a chance to break out of this.
   read -t1 ANYTHING
 
   if test -n "${ANYTHING}"
